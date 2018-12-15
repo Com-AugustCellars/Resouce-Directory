@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Com.AugustCellars.CoAP;
 using Com.AugustCellars.CoAP.Server.Resources;
+#if false
 
 namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
@@ -149,3 +150,4 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
     }
 }
+#endif

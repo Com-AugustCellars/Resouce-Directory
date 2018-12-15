@@ -62,7 +62,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 case "base":
                     if (value == null) throw new Exception();
                     BaseUrl = new Uri(value);
-                    if (BaseUrl.LocalPath != "") {
+                    if (BaseUrl.LocalPath != null && BaseUrl.LocalPath != "") {
                         throw new Exception();
                     }
                     break;
@@ -294,6 +294,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 }
             }
 
+#if false
             if (searchUp && _owner.GroupMgr != null) {
                 foreach (GroupLeaf g in _owner.GroupMgr.AllGroups) {
                     if (g.ContainsEndpoint(this)) {
@@ -301,6 +302,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                     }
                 }
             }
+#endif
 
 
             return false;

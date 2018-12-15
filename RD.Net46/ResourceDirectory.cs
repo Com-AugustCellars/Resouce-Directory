@@ -21,11 +21,13 @@ namespace RD.Net46
 
             EndpointLookup ep_lookup = new EndpointLookup("ep", ep);
             nop.Add(ep_lookup);
+#if false
             GroupManager gp = new GroupManager("rd-group", ep);
             server.Add(gp);
             ep.GroupMgr = gp;
             GroupLookup gp_lookup = new GroupLookup("gp", gp, ep);
             nop.Add(gp_lookup);
+#endif
             ResourceLookup rs_lookup = new ResourceLookup("res", ep);
             nop.Add(rs_lookup);
 

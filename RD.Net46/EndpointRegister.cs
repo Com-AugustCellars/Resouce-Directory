@@ -39,11 +39,14 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
         internal List<EndpointNode> ChildEndpointNodes { get; } = new List<EndpointNode>();
 
+#if false
         /// <summary>
         /// What is the group manager that is associated with this endpoint registar.
         /// </summary>
         public GroupManager GroupMgr { get; set; }
         public GroupLookup GroupLookupResource { get; set; }
+#endif
+
         public EndpointLookup EndpointLookupResource { get; set; }
         public ResourceLookup ResourceLookupResource { get; set; }
 
@@ -214,9 +217,11 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 }
             }
 
+#if false
             if (GroupLookupResource != null) {
                 GroupLookupResource.Changed();
             }
+#endif
 
             EndpointLookupResource.Changed();
             ResourceLookupResource.Changed();
@@ -235,9 +240,11 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
             foreach (EndpointNode ep in toDelete) {
                 epr.ChildEndpointNodes.Remove(ep);
+#if false
                 foreach (GroupLeaf group in epr.GroupMgr.AllGroups) {
                     group.RemoveEndpoint(ep);
                 }
+#endif
             }
 
             
