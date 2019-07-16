@@ -1,20 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using Com.AugustCellars.CoAP;
-using Com.AugustCellars.CoAP.Net;
-using Com.AugustCellars.CoAP.ResourceDirectory;
 using Com.AugustCellars.CoAP.Server.Resources;
 
-namespace RD.Net46
+namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
     public class SimpleRegistration : DiscoveryResource
     {
-        private EndpointRegister _registerAt;
+        private readonly EndpointRegister _registerAt;
         public SimpleRegistration(IResource root, EndpointRegister register) : base(root)
         {
             _registerAt = register;
@@ -32,6 +25,11 @@ namespace RD.Net46
 
                 if (ep2 != null) {
                     if (ep2.AddressFamily == AddressFamily.InterNetworkV6) {
+                        //  SHOULD reject link local addresses  M00BUG - this should be configurable.
+                        if (ep2.Address.IsIPv6LinkLocal) {
+                            exchange.Respond(StatusCode.BadRequest);
+                            return;
+                        }
                         context = $"coap://[{ep2.Address}]:{ep2.Port}";
                     }
                     else {
@@ -40,26 +38,26 @@ namespace RD.Net46
                 }
                 else {
                     //  Can't do anything with this address
+                    exchange.Respond(StatusCode.BadRequest);
                     return;
                 }
 
+                //  Look to see if we have a cached version already
 
                 Uri u = new Uri(context);
 
-                CoapClient c = new CoapClient(u);
-                c.UriPath = "/.well-known/core";
-                c.Timeout = 2000;
-                
+                CoapClient c = new CoapClient(u) {
+                    UriPath = "/.well-known/core",
+                    Timeout = 2000
+                };
+
                 Response r = c.Get();
-                if (r == null || r.StatusCode != StatusCode.Content) {
-                    return;
+                if (r != null && r.StatusCode == StatusCode.Content) {
+                    _registerAt.RegisterEndpoint(exchange.Request.UriQueries, r.Payload, r.ContentType, r.Source);
                 }
-
-                _registerAt.RegisterEndpoint(exchange.Request.UriQueries, r.Payload, r.ContentType, r.Source);
-
             }
             catch (Exception e) {
-                Console.WriteLine("Error doing SimpleRegistration::DoPost " + e.ToString());
+                Console.WriteLine("Error doing SimpleRegistration::DoPost " + e);
             }
         }
     }

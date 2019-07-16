@@ -1,0 +1,14 @@
+1.  Don't send a content type when sending an empty body.
+2.  Fully resolve href values before doing the comparision wit resources but not with endpoint names
+3.  match w/ rd=core.rd does not match /rd and it should - this is in the old .well-known/core code.
+4.  Why expect a local path for base in EndpointNode--Reload
+5.  Should base be displayed if implicit rather than explicit? Check spec.
+6.  Synthesis anchor= if not present.
+
+
+*.  Simple registration does not return a location path.
+*.  Updte is now defined to have no content allowed.
+*.  No get on /rd supported
+*.  Error if page or count is in a registrtion
+*.  Add rt="core.rd-ep" to all endpoint nodes
+*.  Surpress lt= attribute

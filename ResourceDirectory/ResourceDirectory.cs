@@ -1,16 +1,15 @@
 ﻿using System.Linq;
-using System.Timers;
 using Com.AugustCellars.CoAP;
 using Com.AugustCellars.CoAP.Net;
 using Com.AugustCellars.CoAP.ResourceDirectory;
 using Com.AugustCellars.CoAP.Server;
 using Com.AugustCellars.CoAP.Server.Resources;
 
-namespace RD.Net46
+namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
     public class ResourceDirectory
     {
-        static public System.Threading.Timer CleanupTimer;
+        public static System.Threading.Timer _CleanupTimer;
 
         public static void CreateResources(CoapServer server)
         {
@@ -19,8 +18,8 @@ namespace RD.Net46
             NopResource nop = new NopResource("rd-lookup");
             server.Add(nop);
 
-            EndpointLookup ep_lookup = new EndpointLookup("ep", ep);
-            nop.Add(ep_lookup);
+            EndpointLookup epLookup = new EndpointLookup("ep", ep);
+            nop.Add(epLookup);
 #if false
             GroupManager gp = new GroupManager("rd-group", ep);
             server.Add(gp);
@@ -28,8 +27,8 @@ namespace RD.Net46
             GroupLookup gp_lookup = new GroupLookup("gp", gp, ep);
             nop.Add(gp_lookup);
 #endif
-            ResourceLookup rs_lookup = new ResourceLookup("res", ep);
-            nop.Add(rs_lookup);
+            ResourceLookup rsLookup = new ResourceLookup("res", ep);
+            nop.Add(rsLookup);
 
 
             Resource r = new SimpleRegisterRequest(server.EndPoints.First());
@@ -39,12 +38,12 @@ namespace RD.Net46
             server.FindResource(".well-known").Add(r);
 
            
-            CleanupTimer = new System.Threading.Timer(EndpointRegister.Cleanup, ep, 5*60*1000, 5*60*1000);
+            _CleanupTimer = new System.Threading.Timer(EndpointRegister.Cleanup, ep, 5*60*1000, 5*60*1000);
         }
 
         class SimpleRegisterRequest : Resource
         {
-            private IEndPoint _epToUse;
+            private readonly IEndPoint _epToUse;
 
             public SimpleRegisterRequest(IEndPoint ep) : base("post2")
             {
@@ -62,11 +61,12 @@ namespace RD.Net46
                     return;
                 }
 
-                CoapClient c = new CoapClient(cmds[0]);
-                c.UriPath = "/.well-known/core";
-                c.UriQuery = $"ep={cmds[1]}";
-                c.Timeout = 2000;
-                c.EndPoint = _epToUse;
+                CoapClient c = new CoapClient(cmds[0]) {
+                    UriPath = "/.well-known/core",
+                    UriQuery = $"ep={cmds[1]}",
+                    Timeout = 2000,
+                    EndPoint = _epToUse
+                };
 
                 Response r = c.Post(new byte[] { }, MediaType.ApplicationLinkFormat);
                 if (r == null || r.StatusCode != StatusCode.Changed) {

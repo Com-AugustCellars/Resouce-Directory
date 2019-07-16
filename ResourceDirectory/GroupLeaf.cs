@@ -4,45 +4,64 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Com.AugustCellars.CoAP;
+using Com.AugustCellars.CoAP.EndPoint.Resources;
 using Com.AugustCellars.CoAP.Server.Resources;
-using Org.BouncyCastle.Asn1.X509;
+using PeterO.Cbor;
+#if false
 
-namespace ResourceDirectory
+namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
     public class GroupLeaf : Resource
     {
+        public ResourceAttributes RegistrationAttributes { get; private set; }
+        public GroupManager GroupMgr { get; internal set; }
 
-        public GroupLeaf(string resourceName, Request req) : base(resourceName)
+        public GroupLeaf(string resourceName, Request req, GroupManager mgr) : base(resourceName)
         {
+            Server.Resources.ResourceAttributes newAttrs = new Server.Resources.ResourceAttributes();
+            GroupMgr = mgr;
+
             foreach (string query in req.UriQueries) {
                 string[] items = query.Split('=');
-                if (items.Length > 1) {
-                    if (items[1][0] == '"') items[1] = items[1].Substring(1, items[1].Length - 2);
+                string key = items[0];
+                string value = (items.Length == 2) ? items[1] : null;
+                if (value != null && value[0] == '"') {
+                    //  M00BUG check to makes sure we don't need to strip this.
                 }
+
                 switch (items[0]) {
-                    case "gp":
-                        GroupName = items[1];
-                        break;
+                case "gp":
+                    GroupName = value;
+                    break;
 
-                    case "d":
-                        Domain = items[1];
-                        break;
+                case "d":
+                    Domain = value;
+                    break;
 
-                    case "con":
-                        Context = items[1];
-                        break;
+                case "base":
+                    BaseUrl = new Uri(value);
+                    break;
 
-                    default:
-                        // TODO Make this an error
-                        break;
+                default:
+                    break;
                 }
+
+                newAttrs.Add(key, value);
             }
+
+            Attributes.AddContentType(MediaType.ApplicationLinkFormat);
+            Attributes.AddContentType(MediaType.ApplicationLinkFormatCbor);
+            Attributes.AddContentType(MediaType.ApplicationLinkFormatJson);
+            Attributes.Observable = false;
+            Visible = false;
+
+            RegistrationAttributes = newAttrs;
         }
 
-        public string Context { get; private set; }
+        public Uri BaseUrl { get; private set; }
         public string Domain { get; private set; }
         public string GroupName { get; private set; }
-        public List<string> EndPointNames { get;  } = new List<string>();
+        public List<string> EndPointNames { get; private set; } = new List<string>();
 
         protected override void DoDelete(CoapExchange exchange)
         {
@@ -50,22 +69,65 @@ namespace ResourceDirectory
             exchange.Respond(StatusCode.Deleted);
         }
 
-        public StatusCode UpdateContent(string body)
+        public StatusCode UpdateContent(byte[] body, int mediaType)
         {
-            string[] lines = body.Split(',');
-            foreach (string line in lines) {
-                string[] attributes = line.Split(';');
-                if (attributes.Length != 2) return StatusCode.BadRequest;
-                if (attributes[0] != "<>") return StatusCode.BadRequest;
-                attributes = attributes[1].Split('=');
-                if (attributes.Length != 2 || attributes[0] != "ep") return StatusCode.BadRequest;
-                if (attributes[1][0] == '=') {
-                    attributes[1] = attributes[1].Substring(1, attributes[1].Length - 2);
+            RemoteResource res;
+            res = RemoteResource.NewRoot(body, mediaType);
+            List<string> endpointsList = new List<string>();
+
+            foreach (IResource r in res.Children) {
+                if (r.Attributes.Count != 0) return StatusCode.BadRequest;
+
+                IResource r2 = GroupMgr.EndpointMgr.Server.FindResource(r.Uri.Replace('/', ','));
+                if (r2 == null || r2.Parent != GroupMgr.EndpointMgr) {
+                    return StatusCode.BadRequest;
                 }
-                EndPointNames.Add(attributes[1]);
+
+                endpointsList.Add(r.Uri);
             }
+
+            EndPointNames = endpointsList;
 
             return StatusCode.Created;
         }
+
+        internal bool ApplyFilter(Filter filter, bool fSearchDown)
+        {
+            if (filter.Apply(RegistrationAttributes)) return true;
+
+            if (fSearchDown) {
+                foreach (EndpointNode ep in GroupMgr.EndpointMgr.ChildEndpointNodes) {
+                    if (EndPointNames.Contains(ep.Uri) && !ep.IsDeleted) {
+                        if (ep.ApplyFilter(filter, false, true)) return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        internal bool ContainsEndpoint(EndpointNode ep)
+        {
+            string epName = ep.Uri;
+            return EndPointNames.Contains(epName);
+        }
+
+        public void SerializeResource(StringBuilder sb)
+        {
+            LinkFormat.SerializeResource(this, sb, RegistrationAttributes, null);
+        }
+
+        public void SerializeResource(CBORObject root, Dictionary<string, CBORObject> dict)
+        {
+            LinkFormat.SerializeResource(this, root, dict, RegistrationAttributes, null);
+        }
+
+        internal void RemoveEndpoint(EndpointNode ep)
+        {
+            if (ContainsEndpoint(ep)) {
+                EndPointNames.Remove(ep.Uri);
+            }
+        }
     }
 }
+#endif

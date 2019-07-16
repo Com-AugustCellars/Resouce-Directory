@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceDirectory.Test", "ResourceDirectory.Test\ResourceDirectory.Test.csproj", "{4EFCDD90-AF53-4B35-9631-AF3C15002EA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RD.Net46", "RD.Net46\RD.Net46.csproj", "{47722131-AFD5-4ACC-8857-18E637B94DFA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceDirectory", "ResourceDirectory\ResourceDirectory.csproj", "{47722131-AFD5-4ACC-8857-18E637B94DFA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoAP.NET45", "..\CoAP-CSharp\CoAP.NET\CoAP.NET45.csproj", "{45DB1E45-4831-4E4A-BB1E-AE92EEA182E3}"
 EndProject

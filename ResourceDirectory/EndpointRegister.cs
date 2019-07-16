@@ -12,7 +12,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
     public class EndpointRegister : Resource
     {
-        static readonly Random _Random = new Random();
+        static readonly Random random = new Random();
         private static string _CharSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
         public CoapServer Server { get; }
@@ -20,13 +20,17 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
         /// <summary>
         /// Resource corresponding to a resource directory resource.
         /// </summary>
-        /// <param name="resourceName"></param>
+        /// <param name="resourceName">Name of the resource</param>
+        /// <param name="server">Server to use for callback</param>
         public EndpointRegister(string resourceName, CoapServer server) : base(resourceName)
         {
             Attributes.AddResourceType("core.rd");
             Attributes.AddContentType(MediaType.ApplicationLinkFormat);
+#if false
             Attributes.AddContentType(MediaType.ApplicationLinkFormatCbor);
             Attributes.AddContentType(MediaType.ApplicationLinkFormatJson);
+#endif
+            Attributes.AddContentType(MediaType.ApplicationCoralReef);
             ETag = new byte[] {0};
 
             Server = server;
@@ -38,6 +42,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
         public string DefaultDomain { get; set; }
 
         internal List<EndpointNode> ChildEndpointNodes { get; } = new List<EndpointNode>();
+        private readonly object _childEndpointLock = new object();
 
 #if false
         /// <summary>
@@ -67,6 +72,10 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                     return;
                 }
 
+                if (!req.HasOption(OptionType.ContentType)) {
+                    req.ContentType = MediaType.ApplicationLinkFormat;
+                }
+
                 Response response = RegisterEndpoint(req.UriQueries, req.Payload, req.ContentFormat, req.Source);
                 if (response != null) {
                     exchange.Respond(response);
@@ -87,15 +96,6 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 //  Parse down the content
 
                 RemoteResource links = RemoteResource.NewRoot(payload, contentType);
-                /*
-                 I don't think this is relevant any more
-
-                foreach (IResource link in links.Children) {
-                    if (!link.Attributes.Contains("base")) {
-                        link.Attributes.Add("base", "");
-                    }
-                }
-                */
 
                 //
                 //  Look for the required/optional known parameters
@@ -105,11 +105,17 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 string epName = null;
                 string d = null;
                 foreach (string q in uriQueries) {
-                    if (q.StartsWith("ep=")) epName = q.Substring(3);
-                    else if (q.StartsWith("d=")) d = q.Substring(2);
+                    if (q.StartsWith("ep=")) {
+                        epName = q.Substring(3);
+                    }
+                    else if (q.StartsWith("d=")) {
+                        d = q.Substring(2);
+                    }
                 }
 
-                if (d == null && DefaultDomain != null) d = DefaultDomain;
+                if (d == null && DefaultDomain != null) {
+                    d = DefaultDomain;
+                }
 
                 //  Look to see if all we are going to do is to update an existing
                 //  registration.
@@ -117,14 +123,16 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 //
                 //  Atomic change of the current version, replace with new content
 
-                foreach (EndpointNode node in ChildEndpointNodes) {
-                    if (node.Domain == d && node.EndpointName == epName) {
+                lock (_childEndpointLock) {
+                    foreach (EndpointNode node in ChildEndpointNodes) {
+                        if (node.Domain == d && node.EndpointName == epName) {
 
-                        node.Reload(links, uriQueries);
-                        Response response = new Response(StatusCode.Changed) {
-                            LocationPath = node.Uri
-                        };
-                        return response;
+                            node.Reload(links, uriQueries);
+                            Response response = new Response(StatusCode.Changed) {
+                                LocationPath = node.Uri
+                            };
+                            return response;
+                        }
                     }
                 }
 
@@ -139,7 +147,9 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
                 EndpointNode newChild = new EndpointNode(childName, links, uriQueries, this);
 
-                if (newChild.Domain == null) newChild.Domain = DefaultDomain;
+                if (newChild.Domain == null) {
+                    newChild.Domain = DefaultDomain;
+                }
 
                 if (newChild.BaseUrl == null) {
                     System.Net.EndPoint ep = source;
@@ -154,21 +164,21 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                         else {
                             throw new Exception("Unknown address family");
                         }
-                        //  Should not be necessary because we always go with absolute addressing.
-                        // newChild.RegistrationAttributes.Add("anchor", newChild.BaseUrl);
                     }
                 }
 
-                ChildEndpointNodes.Add(newChild);
+                lock (_childEndpointLock) {
+                    ChildEndpointNodes.Add(newChild);
+                }
+
                 Add(newChild);
                 Response res = new Response(StatusCode.Created) {
                     LocationPath = Path + Name + "/" + childName
                 };
 
-
                 //  Propagate the content change through the system
-                //  M00TODO - uncomment this
-                //  ContentChanged();
+
+                ContentChanged();
                 return res;
             }
             catch {
@@ -176,19 +186,11 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             }
         }
 
-        public bool HasEndpoint(string domain, string endpoint)
-        {
-            return true;
-        }
-
         private static string NewName()
         {
-            /*
-            return _CharSet.Select(c => _CharSet[_Random.Next(_CharSet.Length)]).Take(4).ToString();
-            */
             string str = "";
             for (int i = 0; i < 4; i++) {
-                str += _CharSet[_Random.Next(_CharSet.Length)];
+                str += _CharSet[random.Next(_CharSet.Length)];
             }
 
             return str;
@@ -209,12 +211,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             }
 
             if (carry) {
-                if (ETag.Length == 4) {
-                    ETag = new byte[1];
-                }
-                else {
-                    ETag = new byte[ETag.Length + 1];
-                }
+                ETag = ETag.Length == 4 ? new byte[1] : new byte[ETag.Length + 1];
             }
 
 #if false
@@ -227,27 +224,29 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             ResourceLookupResource.Changed();
         }
 
-        public static void Cleanup(Object obj)
+        public static void Cleanup(object obj)
         {
             EndpointRegister epr = (EndpointRegister) obj;
             List<EndpointNode> toDelete = new List<EndpointNode>();
 
-            foreach (EndpointNode ep in epr.ChildEndpointNodes) {
-                if (ep.IsDeleted) {
-                    toDelete.Add(ep);
+            lock (epr._childEndpointLock) {
+                foreach (EndpointNode ep in epr.ChildEndpointNodes) {
+                    if (ep.IsDeleted) {
+                        toDelete.Add(ep);
+                    }
                 }
-            }
 
-            foreach (EndpointNode ep in toDelete) {
-                epr.ChildEndpointNodes.Remove(ep);
+                foreach (EndpointNode ep in toDelete) {
+                    epr.ChildEndpointNodes.Remove(ep);
 #if false
                 foreach (GroupLeaf group in epr.GroupMgr.AllGroups) {
                     group.RemoveEndpoint(ep);
                 }
 #endif
+                }
             }
 
-            
+
         }
     }
 }

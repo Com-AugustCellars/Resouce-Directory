@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Com.AugustCellars.CoAP.Server.Resources;
 
 namespace Com.AugustCellars.CoAP.ResourceDirectory
@@ -14,15 +9,15 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
     {
         class OneFilter
         {
-            public string key;
-            public string value;
-            public bool found;
-            public bool prefix;
+            public string _Key;
+            public string _Value;
+            public bool _Found;
+            public bool _Prefix;
         }
 
-        private Dictionary<string, OneFilter> filters = new Dictionary<string, OneFilter>();
+        private readonly Dictionary<string, OneFilter> _filters = new Dictionary<string, OneFilter>();
 
-        public int Count { get; private set; } = Int32.MaxValue;
+        public int Count { get; private set; } = int.MaxValue;
         public int Page { get; private set; }
 
         public Filter(IEnumerable<string> uriQuery)
@@ -53,8 +48,8 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
 
 
-                    filters.Add(values[0], new OneFilter() {
-                        key = values[0], value = filterValue, prefix = prefix
+                    _filters.Add(values[0], new OneFilter() {
+                        _Key = values[0], _Value = filterValue, _Prefix = prefix
                     });
                 }
             }
@@ -62,28 +57,30 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
         public bool Passes
         {
-            get { return filters.Values.All(item => item.found); }
+            get { return _filters.Values.All(item => item._Found); }
         }
 
         public void ClearState()
         {
-            foreach (OneFilter item in filters.Values) item.found = false;
+            foreach (OneFilter item in _filters.Values) {
+                item._Found = false;
+            }
         }
 
         public bool Href(string value)
         {
-            if (filters.ContainsKey("href")) {
-                if (!filters["href"].found) {
-                    if (filters["href"].prefix) {
-                        if (value.Length >= filters["href"].value.Length &&
-                            filters["href"].value == value.Substring(0, filters["href"].value.Length)) {
-                            filters["href"].found = true;
+            if (_filters.ContainsKey("href")) {
+                if (!_filters["href"]._Found) {
+                    if (_filters["href"]._Prefix) {
+                        if (value.Length >= _filters["href"]._Value.Length &&
+                            _filters["href"]._Value == value.Substring(0, _filters["href"]._Value.Length)) {
+                            _filters["href"]._Found = true;
                             return true;
                         }
                     }
                     else {
-                        if (filters["href"].value == value) {
-                            filters["href"].found = true;
+                        if (_filters["href"]._Value == value) {
+                            _filters["href"]._Found = true;
                             return true;
                         }
                     }
@@ -98,25 +95,25 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             bool changed = false;
 
             foreach (string key in attrList.Keys) {
-                if (filters.ContainsKey(key)) {
-                    if (!filters[key].found) {
-                        if (filters[key].value == null) {
-                            filters[key].found = true;
+                if (_filters.ContainsKey(key)) {
+                    if (!_filters[key]._Found) {
+                        if (_filters[key]._Value == null) {
+                            _filters[key]._Found = true;
                             changed = true;
                         }
                         else {
                             foreach (string v in attrList.GetValues(key)) {
-                                if (filters[key].prefix) {
-                                    if (v.Length >= filters[key].value.Length &&
-                                        filters[key].value == v.Substring(0, filters[key].value.Length)) {
-                                        filters[key].found = true;
+                                if (_filters[key]._Prefix) {
+                                    if (v.Length >= _filters[key]._Value.Length &&
+                                        _filters[key]._Value == v.Substring(0, _filters[key]._Value.Length)) {
+                                        _filters[key]._Found = true;
                                         changed = true;
                                         break;
                                     }
                                 }
                                 else {
-                                    if (filters[key].value == v) {
-                                        filters[key].found = true;
+                                    if (_filters[key]._Value == v) {
+                                        _filters[key]._Found = true;
                                         changed = true;
                                         break;
                                     }

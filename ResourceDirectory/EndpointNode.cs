@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using xx = Com.AugustCellars.CoAP.EndPoint.Resources;
+using Com.AugustCellars.CoAP.Coral;
+using CEndPoint = Com.AugustCellars.CoAP.EndPoint.Resources;
 using Com.AugustCellars.CoAP.Server.Resources;
 using PeterO.Cbor;
 using Resource = Com.AugustCellars.CoAP.Server.Resources.Resource;
@@ -12,36 +13,39 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
     internal class EndpointNode : Resource
     {
-        private xx.RemoteResource _remote;
+        private CEndPoint.RemoteResource _remote;
         private int _lifeTime = 86400; // 24 - hours
 
         public ResourceAttributes RegistrationAttributes { get; private set; }
         private readonly EndpointRegister _owner;
 
-        public EndpointNode(string name, xx.RemoteResource root, IEnumerable<string> uriQueries, EndpointRegister owner) : base(name, false)
+        public EndpointNode(string name, CEndPoint.RemoteResource root, IEnumerable<string> uriQueries, EndpointRegister owner) : base(name, false)
         {
             Reload(root, uriQueries);
             _owner = owner;
 
+            Attributes.AddContentType(MediaType.ApplicationLinkFormat);
+            Attributes.AddContentType(MediaType.ApplicationCoralReef);
 #if false
             Attributes.AddContentType(MediaType.ApplicationLinkFormat);
             Attributes.AddContentType(MediaType.ApplicationLinkFormatCbor);
             Attributes.AddContentType(MediaType.ApplicationLinkFormatJson);
-            Attributes.Observable = true;
 #endif
+            Attributes.Observable = true;
             Visible = false;
         }
 
-        public void Reload(xx.RemoteResource root, IEnumerable<string> uriQueries)
+        public void Reload(CEndPoint.RemoteResource root, IEnumerable<string> uriQueries)
         {
             ResourceAttributes newAttrs = new ResourceAttributes();
 
-            _lifeTime = 86400;
+            _lifeTime = 90000;
             foreach (string query in uriQueries) {
-                int eq = query.IndexOf('=');
-                string key = eq == -1 ? query : query.Substring(0, eq);
-                string value = (eq == -1) ? null : query.Substring(eq + 1);
-                if (value != null && value[0] == '"') {
+                string[] vals = query.Split(new char[]{'='}, 2);
+                string key = vals[0];
+                string value = vals.Length == 2 ? vals[1] : null;
+
+                if (value != null && value.Length >= 2 && value[0] == '"') {
                     value = value.Substring(1, value.Length - 1);
                 }
 
@@ -56,13 +60,13 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
                 case "lt":
                     if (value == null) throw new Exception();
-                    _lifeTime = Int32.Parse(value);
+                    _lifeTime = int.Parse(value);
                     break;
 
                 case "base":
                     if (value == null) throw new Exception();
                     BaseUrl = new Uri(value);
-                    if (BaseUrl.LocalPath != null && BaseUrl.LocalPath != "") {
+                    if (BaseUrl.LocalPath == "") {
                         throw new Exception();
                     }
                     break;
@@ -79,13 +83,11 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             RegistrationAttributes = newAttrs;
 
             ExpireTime = DateTime.Now + TimeSpan.FromSeconds(_lifeTime);
-
-            Changed();
         }
 
         public Uri BaseUrl { get; set; }
-        public String Domain { get; set; }
-        public String EndpointName { get; private set; }
+        public string Domain { get; set; }
+        public string EndpointName { get; private set; }
         public DateTime ExpireTime { get; private set; }
         public bool IsDeleted
         {
@@ -100,7 +102,10 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 Request req = exchange.Request;
                 StringBuilder sb = null;
                 CBORObject items = null;
+                CoralBody coralBody = null;
+#if false
                 Dictionary<string, CBORObject> dict = null;
+#endif
                 int retContentType = MediaType.Any;
 
                 if (req.HasOption(OptionType.Accept)) {
@@ -110,6 +115,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                             sb = new StringBuilder();
                             break;
 
+#if false  // Work is dead?
                         case MediaType.ApplicationLinkFormatCbor:
                             items = CBORObject.NewArray();
                             dict = LinkFormat.CborAttributeKeys;
@@ -117,6 +123,11 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
                         case MediaType.ApplicationLinkFormatJson:
                             items = CBORObject.NewArray();
+                            break;
+#endif
+
+                        case MediaType.ApplicationCoralReef:
+                            coralBody = new CoralBody();
                             break;
 
                         default:
@@ -126,13 +137,13 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                         }
 
                         //  We found a value
-                        if (sb != null || items != null) {
+                        if (sb != null || items != null || coralBody != null) {
                             retContentType = acceptOption.IntValue;
                             break;
                         }
                     }
 
-                    if (sb == null && items == null) {
+                    if (sb == null && items == null && coralBody == null) {
                         exchange.Respond(StatusCode.NotAcceptable);
                         return;
                     }
@@ -146,7 +157,6 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
 
                 Response resp = Response.CreateResponse(exchange.Request, StatusCode.Content);
 
-
                 foreach (IResource link in Links) {
                     filter.ClearState();
                     if (!filter.Apply(link.Attributes)) {
@@ -158,9 +168,14 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                             LinkFormat.SerializeResource(link, sb, null, null);
                             sb.Append(',');
                         }
+                        else if (coralBody != null) {
+                            LinkFormat.SerializeCoral(link, null);
+                        }
+#if false
                         else {
                             LinkFormat.SerializeResource(link, items, dict, null, null);
                         }
+#endif
                     }
                 }
 
@@ -168,12 +183,17 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                     sb.Remove(sb.Length - 1, 1);
                     resp.PayloadString = sb.ToString();
                 }
+                else if (coralBody != null) {
+                    resp.Payload = coralBody.EncodeToBytes(LinkFormat.ReefDictionary);
+                }
+#if false // dead
                 else if (dict == null) {
                     resp.PayloadString = items.ToJSONString();
                 }
                 else {
                     resp.Payload = items.EncodeToBytes();
                 }
+#endif
 
                 resp.ContentFormat = retContentType;
 
@@ -187,7 +207,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
         protected override void DoPost(CoapExchange exchange)
         {
             Request req = exchange.Request;
-            Server.Resources.ResourceAttributes newAttrs = new ResourceAttributes();
+            ResourceAttributes newAttrs = new ResourceAttributes();
             foreach (string key in RegistrationAttributes.Keys) {
                 foreach (string value in RegistrationAttributes.GetValues(key)) {
                     newAttrs.Add(key, value);
@@ -237,56 +257,15 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             _owner.ContentChanged();
         }
 
-#if false
-        // No longer supported
-        protected override void DoPatch(CoapExchange exchange)
-        {
-            Request req = exchange.Request;
-            CBORObject patch;
-
-            if (req.HasOption(OptionType.ContentType)) {
-                switch (req.ContentType) {
-                    case 9998: // application/merge-patch+json
-                        patch = CBORObject.FromJSONString(req.PayloadString);
-                        break;
-
-                    case 9997: // application/merge-patch+cbor
-                        patch = CBORObject.DecodeFromBytes(req.Payload);
-                        break;
-
-                    default:
-                        exchange.Respond(StatusCode.BadRequest);
-                        return;
-                }
-            }
-            else {
-                //  Assume it is application/merge-patch+json for no reason
-                patch = CBORObject.FromJSONString(req.PayloadString);
-            }
-
-            if (patch.Type == CBORType.Array) {
-                DoPatchAdd(patch, exchange);
-            }
-            else if (patch.Type == CBORType.Map) {
-                DoPatchUpdate(patch, exchange);
-            }
-            else {
-                exchange.Respond(StatusCode.BadRequest);
-            }
-        }
-#endif
-
         protected override void DoDelete(CoapExchange exchange)
         {
-            // M00BUG - DELETE ME NOW not later.
             ExpireTime = DateTime.MinValue;
             exchange.Respond(StatusCode.Deleted);
         }
 
         internal bool ApplyFilter(Filter filterList, bool searchUp, bool searchDown)
         {
-            if (filterList.Apply(this.RegistrationAttributes)) return true;
-            // if (filterList.Apply(this.Attributes)) return true;
+            if (filterList.Apply(RegistrationAttributes)) return true;
 
             if (searchDown) {
                 foreach (IResource link in _remote.Children) {
@@ -308,104 +287,28 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             return false;
         }
 
+        internal void GetLink(CoralBody coral)
+        {
+            LinkFormat.SerializeResourceInCoral(this, coral, null, RegistrationAttributes, null, true);
+        }
+
         internal void GetLink(StringBuilder sb)
         {
             LinkFormat.SerializeResource(this, sb, RegistrationAttributes);
             sb.Append(",");
         }
 
-        internal void GetLink(CBORObject array, Dictionary<string, CBORObject> cborDictionary)
+#if false  // Work is dead?
+        internal void GetLink(CBORObject array, Dictionary<string, CBORObject> cborDictionary, int retContentType)
         {
-            LinkFormat.SerializeResource(this, array, cborDictionary, RegistrationAttributes);
-        }
-
-#if false
-        // Patch goes away
-
-        private void DoPatchAdd(CBORObject patch, CoapExchange exchange)
-        {
-            
-        }
-
-        private void DoPatchUpdate(CBORObject patch, CoapExchange exchage)
-        {
-            if (patch.ContainsKey("href") || patch.ContainsKey("rel") || patch.ContainsKey("anchor")) {
-                exchage.Respond(StatusCode.BadRequest);
-                return;
+            if (retContentType == MediaType.ApplicationLinkFormatCbor) {
+                LinkFormat.SerializeResource(this, array, cborDictionary, RegistrationAttributes);
             }
-
-        //    IList<WebLink> patchList = _remote.Where(exchange.Request.UriQueries);
-
-         //   foreach (WebLink link in patchList) {
-                
-       //     }
-
-        }
-
-
-
-        private WebLink MergePatch(WebLink target, CBORObject patch)
-        {
-            if (!VerifyAndPatch(patch)) {
-                //  Invalid body.
-                return null;
+            else {
+                if (System.Diagnostics.Debugger.IsAttached)
+                    System.Diagnostics.Debugger.Break();
+                // LinkFormat.SerializeResourceInCoral(this, array, cborDictionary, RegistrationAttributes);
             }
-
-            foreach (CBORObject name in patch.Keys) {
-                CBORObject value = patch[name];
-                if (value.IsNull) {
-                    if (target.Attributes.Contains(name.AsString())) {
-                        target.Attributes.Clear(name.AsString());
-                    }
-                }
-                else if (value.IsTrue) {
-                    target.Attributes.Clear(name.AsString());
-                    target.Attributes.Add(name.AsString());
-                }
-                else if (value.Type == CBORType.Array) {
-                    target.Attributes.Clear(name.AsString());
-                    for (int i = 0; i < value.Count; i++) {
-                        CBORObject v2 = value[i];
-                        if (v2.IsTrue) target.Attributes.Add(name.AsString());
-                        else target.Attributes.Add(name.AsString(), v2.AsString());
-                    }
-                }
-                else if (value.Type == CBORType.TextString) {
-                    target.Attributes.Clear(name.AsString());
-                    target.Attributes.Set(name.AsString(), value.AsString());
-                }
-                else {
-                    //  This is an error - we should have already found it.
-                    ;
-                }
-            }
-
-            return target;
-        }
-
-        private bool VerifyAndPatch(CBORObject patch)
-        {
-            List<CBORObject> keys = patch.Keys.ToList();
-
-            foreach (CBORObject key in keys) {
-                CBORObject value = patch[key];
-
-                // TODO - deal with cbor to json mapping
-
-                if (value.IsNull || value.IsTrue) continue;
-                if (value.Type == CBORType.Array) {
-                    for (int i = 0; i < value.Count; i++) {
-                        if (value.IsNull || value.IsTrue || value.Type == CBORType.TextString) continue;
-                        return false;
-                    }
-                }
-                else if (value.Type == CBORType.TextString) {
-
-                }
-                else return false;
-            }
-
-            return true;
         }
 #endif
     }
