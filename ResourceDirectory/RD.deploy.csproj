@@ -12,8 +12,8 @@
     <Authors>Jim Schaad</Authors>
     <Title>C# Implementation of the resource directory</Title>
     <Description>
-      This is an implemenation of the Resource Directory specification version -XX.
-      There is currently not any specific security that is done for 
+      This is an implemenation of the Resource Directory specification version -23.
+      There is currently not any specific security that is done when accepting requests.
     </Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Copyright>Copyright @2019 Jim Schaad</Copyright>
