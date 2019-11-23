@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceDirectory", "ResourceDirectory\ResourceDirectory.csproj", "{E8EBFB60-A85E-4FA1-8717-5CE9379A3E5F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceDirectory", "ResourceDirectory\RD.deploy.csproj", "{E8EBFB60-A85E-4FA1-8717-5CE9379A3E5F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceDirectory.Test", "ResourceDirectory.Test\ResourceDirectory.Test.csproj", "{4EFCDD90-AF53-4B35-9631-AF3C15002EA8}"
 EndProject

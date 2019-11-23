@@ -1,0 +1,10 @@
+image: Visual Studio 2017
+
+install:
+    appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+
+before_build:
+    nuget restore ResourceDirectory.sln
+
+build:
+    project: ResourceDirectory.sln

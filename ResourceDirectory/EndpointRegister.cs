@@ -96,6 +96,12 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 //  Parse down the content
 
                 RemoteResource links = RemoteResource.NewRoot(payload, contentType);
+                foreach (IResource child in links.Children) {
+                    if (!child.Attributes.Contains("anchor")) {
+                        child.Attributes.Add("anchor", "");
+                    }
+                }
+
 
                 //
                 //  Look for the required/optional known parameters
@@ -181,8 +187,11 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 ContentChanged();
                 return res;
             }
-            catch {
-                return new Response(StatusCode.BadRequest);
+            catch (Exception  e) {
+                Response r = new Response(StatusCode.BadRequest) {
+                    PayloadString = e.ToString()
+                };
+                return r;
             }
         }
 

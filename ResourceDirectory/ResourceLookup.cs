@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Com.AugustCellars.CoAP;
 using Com.AugustCellars.CoAP.Coral;
 using Com.AugustCellars.CoAP.Server.Resources;
 using PeterO.Cbor;
-using Com.AugustCellars.CoAP.ResourceDirectory;
-using Com.AugustCellars.CoAP.Util;
 
 namespace Com.AugustCellars.CoAP.ResourceDirectory
 {
@@ -21,8 +16,10 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             _root = root;
             Attributes.AddResourceType("core.rd-lookup-res");
             Attributes.AddContentType(MediaType.ApplicationLinkFormat);
+#if false
             Attributes.AddContentType(MediaType.ApplicationCbor);
             Attributes.AddContentType(MediaType.ApplicationJson);
+#endif
             root.ResourceLookupResource = this;
         }
 

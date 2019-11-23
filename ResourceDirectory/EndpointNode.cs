@@ -46,7 +46,7 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
                 string value = vals.Length == 2 ? vals[1] : null;
 
                 if (value != null && value.Length >= 2 && value[0] == '"') {
-                    value = value.Substring(1, value.Length - 1);
+                    value = value.Substring(1, value.Length - 2);
                 }
 
                 switch (key) {

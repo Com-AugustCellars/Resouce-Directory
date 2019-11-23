@@ -1,78 +1,57 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{47722131-AFD5-4ACC-8857-18E637B94DFA}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RD.Net46</RootNamespace>
-    <AssemblyName>RD.Net46</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <PackageId>Com.AugustCellars.CoAP.ResourceDirectory</PackageId>
+    <Id>Com.AugustCellars.CoAP.ResourceDirectory</Id>
+    <PackageVersion>0.1.0</PackageVersion>
+    <Version>0.1.0</Version>
+    <Authors>Jim Schaad</Authors>
+    <Description>An implementation of the WebToken</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright @2016-9 Jim Schaad</Copyright>
+    <PackageTags>ResourceDirectory CoAP</PackageTags>
+    
+    <PackageReleaseNotes>
+    Don't release me
+    </PackageReleaseNotes>
+    
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+  
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <AssemblyName>ResourceDirectory</AssemblyName>
+    <RootNamespace>Com.AugustCellars.CoAP.ResourceDirectory</RootNamespace>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <IntermediateOutputPath>obj\dev\Debug</IntermediateOutputPath>
+    <OutputPath>bin\dev\Debug\</OutputPath>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="CBOR, Version=3.0.3.0, Culture=neutral, PublicKeyToken=9cd62db60ea5554c, processorArchitecture=MSIL">
-      <HintPath>..\..\TestServer\packages\PeterO.Cbor.3.0.3\lib\netstandard1.0\CBOR.dll</HintPath>
-    </Reference>
-    <Reference Include="Numbers, Version=1.0.2.0, Culture=neutral, PublicKeyToken=9cd62db60ea5554c, processorArchitecture=MSIL">
-      <HintPath>..\..\TestServer\packages\PeterO.Numbers.1.0.2\lib\netstandard1.0\Numbers.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="EndpointLookup.cs" />
     <Compile Include="Filter.cs" />
     <Compile Include="GroupLeaf.cs" />
     <Compile Include="GroupLookup.cs" />
     <Compile Include="GroupManager.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="EndpointNode.cs" />
     <Compile Include="EndpointRegister.cs" />
     <Compile Include="ResourceDirectory.cs" />
     <Compile Include="ResourceLookup.cs" />
     <Compile Include="SimpleRegistration.cs" />
   </ItemGroup>
+  
   <ItemGroup>
-    <None Include="packages.config" />
+    <PackageReference Include="PeterO.Cbor" Version="4.0.1" />
   </ItemGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="..\..\CoAP-CSharp\CoAP.NET\coap.dev.csproj">
-      <Project>{45db1e45-4831-4e4a-bb1e-ae92eea182e3}</Project>
-      <Name>coap.dev</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\..\CoAP-CSharp\CoAP.NET\coap.dev.csproj" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  
 </Project>

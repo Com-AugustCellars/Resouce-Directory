@@ -1,7 +1,5 @@
 ﻿using System.Linq;
-using Com.AugustCellars.CoAP;
 using Com.AugustCellars.CoAP.Net;
-using Com.AugustCellars.CoAP.ResourceDirectory;
 using Com.AugustCellars.CoAP.Server;
 using Com.AugustCellars.CoAP.Server.Resources;
 
@@ -37,7 +35,6 @@ namespace Com.AugustCellars.CoAP.ResourceDirectory
             r = new SimpleRegistration(server.FindResource(""), ep);
             server.FindResource(".well-known").Add(r);
 
-           
             _CleanupTimer = new System.Threading.Timer(EndpointRegister.Cleanup, ep, 5*60*1000, 5*60*1000);
         }
 

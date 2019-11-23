@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net462;netcoreapp2.0</TargetFrameworks>
+    <PackageId>Com.AugustCellars.CoAP.TLS</PackageId>
+    <Id>Com.AugustCellars.CoAP.TLS</Id>
+    <PackageVersion>0.1.0.0</PackageVersion>
+    <Version>0.1.0.0</Version>
+    <Authors>Jim Schaad</Authors>
+    <Title>C# Implementation of the resource directory</Title>
+    <Description>
+      This is an implemenation of the Resource Directory specification version -XX.
+      There is currently not any specific security that is done for 
+    </Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright @2019 Jim Schaad</Copyright>
+    <PackageTags>CoAP ResourceDirectory</PackageTags>
+    <RepositoryUrl>https://github.com/Com-AugustCellars/ResourceDirectory</RepositoryUrl>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    
+
+    
+    <PackageReleaseNotes>
+0.5
+  - Implements the Resource Directory according to version 23 of the Internet Draft.
+    This version is still missing a method for passing in and setting a permissions check function.
+
+0.1
+  - Initial release      
+    </PackageReleaseNotes>
+
+    <Configurations>Debug;Release;Deploy</Configurations>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <AssemblyName>ResourceDirectory</AssemblyName>
+    <RootNamespace>Com.AugustCellars.CoAP.ResourceDirectory</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Deploy|Any CPU' ">
+    <AssemblyOriginatorKeyFile>AugustCellarsStrongKey.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <IntermediateOutputPath>obj\Deploy</IntermediateOutputPath>
+    <OutputPath>bin\Deploy\</OutputPath>
+    <DefineConstants></DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+    <IntermediateOutputPath>obj\Debug</IntermediateOutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Include="EndpointLookup.cs" />
+    <Compile Include="EndpointNode.cs" />
+    <Compile Include="EndpointRegister.cs" />
+    <Compile Include="Filter.cs" />
+    <Compile Include="GroupLeaf.cs" />
+    <Compile Include="GroupLookup.cs" />
+    <Compile Include="GroupManager.cs" />
+    <Compile Include="ResourceDirectory.cs" />
+    <Compile Include="ResourceLookup.cs" />
+    <Compile Include="SimpleRegistration.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Com.AugustCellars.CoAP" Version="1.6.0" />
+  </ItemGroup>
+</Project>
